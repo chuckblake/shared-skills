@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PR Review Brief - [ PR TITLE ]</title>
+<style>
+  :root {
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+    --page:   #f6f7f9;
+    --card:   #ffffff;
+    --line:   #e3e6ea;
+    --line-2: #eef0f3;
+    --text:   #1a1d21;
+    --dim:    #5b6470;
+    --faint:  #8a929c;
+    --accent: #1f6feb;
+
+    --clear:  #1a7f37;
+    --low:    #57606a;
+    --medium: #9a6700;
+    --high:   #bc4c00;
+    --crit:   #cf222e;
+
+    --clear-bg:  #eafaef;
+    --medium-bg: #fdf6e3;
+    --high-bg:   #fdf0e6;
+    --crit-bg:   #fcebec;
+
+    --fill-bg:   #fff8e1;
+    --fill-line: #e0c060;
+
+    --radius: 8px;
+    --maxw: 900px;
+  }
+  html[data-theme="dark"] {
+    --page:   #0d1117;
+    --card:   #161b22;
+    --line:   #30363d;
+    --line-2: #21262d;
+    --text:   #e6edf3;
+    --dim:    #9aa4af;
+    --faint:  #6e7781;
+    --accent: #4493f8;
+    --clear:  #3fb950;
+    --low:    #8b949e;
+    --medium: #d29922;
+    --high:   #db6d28;
+    --crit:   #f85149;
+    --clear-bg:  #102a16;
+    --medium-bg: #2b2410;
+    --high-bg:   #2b1d12;
+    --crit-bg:   #2d1518;
+    --fill-bg:   #2b2410;
+    --fill-line: #b08a1e;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--text);
+    font-family: var(--sans); font-size: 15px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 24px 20px 80px; }
+  a { color: var(--accent); }
+
+  /* toolbar */
+  .toolbar {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+    padding: 10px 0; margin-bottom: 20px;
+    background: var(--page); border-bottom: 1px solid var(--line);
+  }
+  .toolbar .spacer { flex: 1; }
+  button.tool {
+    font-family: var(--sans); font-size: 12.5px;
+    color: var(--dim); background: var(--card);
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 5px 11px; cursor: pointer; transition: .12s;
+  }
+  button.tool:hover { color: var(--text); border-color: var(--faint); }
+  button.tool.on { color: #fff; background: var(--accent); border-color: var(--accent); }
+  button.tool:focus-visible,
+  .flag:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* header */
+  header.head { margin-bottom: 22px; }
+  .kicker { font-size: 12px; color: var(--faint); margin-bottom: 4px; }
+  h1.title { font-size: 26px; line-height: 1.25; font-weight: 650; margin: 0 0 16px; }
+  .meta {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0; border: 1px solid var(--line); border-radius: var(--radius);
+    overflow: hidden; background: var(--card);
+  }
+  .meta .cell { padding: 10px 14px; border-right: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); }
+  .meta .k { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--faint); }
+  .meta .v { font-size: 14px; margin-top: 2px; word-break: break-word; }
+
+  /* risk banner */
+  .banner {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    border: 1px solid var(--line); border-left: 4px solid var(--low);
+    border-radius: var(--radius); padding: 14px 16px; margin: 18px 0 12px;
+    background: var(--card); transition: .15s;
+  }
+  .banner .lvl { font-size: 17px; font-weight: 700; letter-spacing: .02em; }
+  .banner .desc { color: var(--dim); font-size: 13.5px; flex: 1; min-width: 200px; }
+  .banner .count { font-size: 12.5px; color: var(--faint); white-space: nowrap; }
+  .banner[data-lvl="CLEAR"]    { border-left-color: var(--clear);  background: var(--clear-bg); }
+  .banner[data-lvl="CLEAR"]    .lvl { color: var(--clear); }
+  .banner[data-lvl="LOW"]      { border-left-color: var(--low); }
+  .banner[data-lvl="LOW"]      .lvl { color: var(--low); }
+  .banner[data-lvl="MEDIUM"]   { border-left-color: var(--medium); background: var(--medium-bg); }
+  .banner[data-lvl="MEDIUM"]   .lvl { color: var(--medium); }
+  .banner[data-lvl="HIGH"]     { border-left-color: var(--high); background: var(--high-bg); }
+  .banner[data-lvl="HIGH"]     .lvl { color: var(--high); }
+  .banner[data-lvl="CRITICAL"] { border-left-color: var(--crit); background: var(--crit-bg); }
+  .banner[data-lvl="CRITICAL"] .lvl { color: var(--crit); }
+
+  /* flags */
+  .flags { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 26px; }
+  .flag {
+    appearance: none; font-family: var(--sans);
+    font-size: 13px; border: 1px solid var(--line); border-radius: 999px;
+    padding: 4px 12px; cursor: pointer; user-select: none;
+    color: var(--faint); background: var(--card); transition: .12s;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .flag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--line); transition: .12s; }
+  .flag:hover { color: var(--dim); border-color: var(--faint); }
+  .flag.active { color: var(--text); }
+  .flag[data-sev="low"].active    { border-color: var(--low); }     .flag[data-sev="low"].active::before    { background: var(--low); }
+  .flag[data-sev="medium"].active { border-color: var(--medium); }  .flag[data-sev="medium"].active::before { background: var(--medium); }
+  .flag[data-sev="high"].active   { border-color: var(--high); }    .flag[data-sev="high"].active::before   { background: var(--high); }
+  .flag[data-sev="critical"].active { border-color: var(--crit); }  .flag[data-sev="critical"].active::before { background: var(--crit); }
+
+  /* sections */
+  section { margin-bottom: 22px; }
+  .sec-head {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12px; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--dim); font-weight: 600; margin: 0 0 10px;
+  }
+  .sec-head .bar { height: 1px; background: var(--line); flex: 1; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+  .lede { font-size: 16px; line-height: 1.55; margin: 0; }
+  .prose { font-size: 14.5px; line-height: 1.65; }
+  .prose p { margin: 0 0 10px; } .prose p:last-child { margin-bottom: 0; }
+  .prose ul { margin: 0 0 10px; padding-left: 20px; } .prose ul:last-child { margin-bottom: 0; }
+  .prose li { margin: 3px 0; }
+
+  /* review guide */
+  .guide { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 620px){ .guide { grid-template-columns: 1fr; } }
+  .guide .col { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+  .guide .col h4 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  .guide .focus h4 { color: var(--high); }
+  .guide .skim h4 { color: var(--faint); }
+  .guide ul { margin: 0; padding-left: 18px; font-size: 13.5px; }
+  .guide li { margin: 4px 0; }
+
+  code, .path { font-family: var(--mono); font-size: 13px; }
+  .path { color: var(--accent); }
+
+  /* details */
+  details { border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); overflow: hidden; }
+  details + details { margin-top: 10px; }
+  summary {
+    cursor: pointer; list-style: none; padding: 13px 16px;
+    display: flex; align-items: center; gap: 10px; font-size: 14px;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary .chev { color: var(--faint); transition: transform .15s; font-size: 11px; }
+  details[open] summary .chev { transform: rotate(90deg); }
+  summary .lbl { font-weight: 600; }
+  summary:hover { background: var(--line-2); }
+  .details-body { padding: 2px 16px 16px; }
+
+  /* source badges */
+  .prov {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .03em;
+    border: 1px solid var(--line); border-radius: 5px; padding: 2px 8px;
+    cursor: pointer; user-select: none; white-space: nowrap; color: var(--faint); transition: .12s;
+  }
+  .prov[data-state="human"]  { color: var(--clear);  border-color: color-mix(in srgb, var(--clear) 40%, var(--line)); }
+  .prov[data-state="ai"]     { color: var(--medium); border-color: color-mix(in srgb, var(--medium) 40%, var(--line)); }
+  .prov[data-state="review"] { color: var(--crit);   border-color: color-mix(in srgb, var(--crit) 40%, var(--line)); }
+  .prov-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--faint); margin-top: 8px; }
+
+  /* commands */
+  .cmd {
+    position: relative; background: var(--line-2); border: 1px solid var(--line);
+    border-radius: 6px; padding: 11px 46px 11px 13px; margin: 8px 0;
+    font-family: var(--mono); font-size: 13px; white-space: pre-wrap; word-break: break-word;
+  }
+  .cmd .copy {
+    position: absolute; top: 6px; right: 6px; font-family: var(--sans); font-size: 11px;
+    background: var(--card); color: var(--dim); border: 1px solid var(--line);
+    border-radius: 5px; padding: 3px 8px; cursor: pointer;
+  }
+  .cmd .copy:hover { color: var(--text); border-color: var(--faint); }
+  .cmd .copy.done { color: var(--clear); border-color: var(--clear); }
+
+  /* metrics */
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr)); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--card); }
+  .metric { padding: 13px 16px; border-right: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); }
+  .metric .k { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--faint); }
+  .metric .v { font-size: 19px; margin-top: 3px; font-weight: 600; word-break: break-word; }
+
+  /* diagram */
+  .diagram { border: 1px solid var(--line); border-radius: 6px; background: var(--line-2); padding: 14px; overflow-x: auto; margin-bottom: 12px; }
+  .diagram pre { margin: 0; font-family: var(--mono); font-size: 12.5px; color: var(--dim); line-height: 1.5; }
+
+  /* fill placeholders */
+  .fill { color: var(--dim); }
+  html[data-fillmode="on"] .fill { background: var(--fill-bg); border-bottom: 1px solid var(--fill-line); color: var(--text); padding: 0 3px; border-radius: 3px; }
+
+  footer.sig { margin-top: 26px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 12px; color: var(--faint); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+
+  @media print {
+    body { background: #fff; }
+    .toolbar { display: none; }
+    details:not([open]) .details-body { display: block; }
+    summary .chev, .copy { display: none; }
+    .banner, .card, .meta, .metrics, details, .guide .col, .cmd, .diagram { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="toolbar">
+    <button class="tool" id="btn-expand">Show details</button>
+    <button class="tool" id="btn-collapse">Hide details</button>
+    <button class="tool" id="btn-fill">Highlight blanks</button>
+    <span class="spacer"></span>
+    <span class="count" id="fill-count" style="font-size:12px;color:var(--faint)"></span>
+    <button class="tool" id="btn-print">Print / PDF</button>
+    <button class="tool" id="btn-theme">Dark</button>
+  </div>
+
+  <header class="head">
+    <div class="kicker">Pull Request &middot; #<span class="fill">000</span> &rarr; <span class="fill">base-branch</span></div>
+    <h1 class="title fill">[ One-line PR title - what this change does ]</h1>
+    <div class="meta">
+      <div class="cell"><div class="k">Repo</div><div class="v fill">[ org/repo ]</div></div>
+      <div class="cell"><div class="k">Branch</div><div class="v fill">[ feature/branch ]</div></div>
+      <div class="cell"><div class="k">Author</div><div class="v fill">[ name ]</div></div>
+      <div class="cell"><div class="k">Reviewers</div><div class="v fill">[ names ]</div></div>
+      <div class="cell"><div class="k">Date</div><div class="v fill">[ YYYY-MM-DD ]</div></div>
+      <div class="cell"><div class="k">Commit</div><div class="v fill">[ sha ]</div></div>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head">Summary <span class="bar"></span>
+      <span class="prov" data-state="review" title="Click to cycle source">Needs review</span>
+    </div>
+    <div class="card"><p class="lede fill">[ One sentence: what changed, who it affects, and why it matters for review. ]</p></div>
+  </section>
+
+  <div class="banner" id="banner" data-lvl="CLEAR">
+    <span class="lvl" id="banner-lvl">CLEAR</span>
+    <span class="desc" id="banner-desc">No special risk flags set. Turn on any that apply.</span>
+    <span class="count" id="banner-count"></span>
+  </div>
+
+  <div class="flags" id="flags">
+    <button type="button" class="flag" data-sev="critical">Sensitive or personal data</button>
+    <button type="button" class="flag" data-sev="critical">Payments or billing</button>
+    <button type="button" class="flag" data-sev="high">Auth or permissions</button>
+    <button type="button" class="flag" data-sev="high">Secrets or tokens</button>
+    <button type="button" class="flag" data-sev="high">API behavior changes</button>
+    <button type="button" class="flag" data-sev="medium">Database change</button>
+    <button type="button" class="flag" data-sev="medium">External service</button>
+    <button type="button" class="flag" data-sev="medium">Background work</button>
+    <button type="button" class="flag" data-sev="medium">Could affect speed</button>
+    <button type="button" class="flag" data-sev="low">New or updated package</button>
+    <button type="button" class="flag" data-sev="low">Config or deploy setup</button>
+  </div>
+
+  <section>
+    <div class="sec-head">Quick numbers <span class="bar"></span></div>
+    <div class="metrics">
+      <div class="metric"><div class="k">Files changed</div><div class="v fill">[ 0 ]</div></div>
+      <div class="metric"><div class="k">Tests</div><div class="v fill">[ not run ]</div></div>
+      <div class="metric"><div class="k">Database</div><div class="v fill">[ none ]</div></div>
+      <div class="metric"><div class="k">Packages</div><div class="v fill">[ none ]</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">Review guide <span class="bar"></span></div>
+    <div class="guide">
+      <div class="col focus">
+        <h4>Look closely</h4>
+        <ul>
+          <li><span class="path fill">[ path/to/risky_file ]</span> - <span class="fill">what to check and why</span></li>
+          <li><span class="path fill">[ path ]</span> - <span class="fill">what could go wrong here</span></li>
+        </ul>
+      </div>
+      <div class="col skim">
+        <h4>Okay to skim</h4>
+        <ul><li class="fill">[ generated files, renames, fixtures, formatting-only changes ]</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">What changed <span class="bar"></span></div>
+    <div class="card prose">
+      <ul>
+        <li class="fill">[ Change 1 - user or system behavior reviewers can observe ]</li>
+        <li class="fill">[ Change 2 ]</li>
+        <li class="fill">[ Change 3 ]</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">Details <span class="bar"></span></div>
+
+    <details>
+      <summary><span class="chev">&#9654;</span><span class="lbl">Why this approach</span><span style="flex:1"></span><span class="prov" data-state="review" title="Click to cycle source">Needs review</span></summary>
+      <div class="details-body prose">
+        <p class="fill">[ The problem this solves, the reason for this approach, and any constraint the reviewer should know. ]</p>
+        <p><strong>Other options considered:</strong></p>
+        <ul><li class="fill">[ Option A - why rejected ]</li><li class="fill">[ Option B - why rejected ]</li></ul>
+        <p><strong>Tradeoff:</strong> <span class="fill">[ what we give up, and why it is acceptable ]</span></p>
+        <p><strong>Links:</strong> <span class="fill">[ issue / design note / spec - link the durable source ]</span></p>
+      </div>
+    </details>
+
+    <details>
+      <summary><span class="chev">&#9654;</span><span class="lbl">Design / flow change</span><span style="flex:1"></span><span class="prov" data-state="review" title="Click to cycle source">Needs review</span></summary>
+      <div class="details-body">
+        <p class="prose" style="margin-top:6px">Show only what changed. Replace the sketch with inline SVG if that is clearer.</p>
+        <div class="diagram"><pre class="fill">  [ before ]                 [ after ]
+
+  Request -> Handler         Request -> Handler
+              |                          |
+              v                          v
+           Data store   ===>         Service -> Data store
+                                         |
+                                         v
+                                    Background job</pre></div>
+        <div class="prose"><p class="fill">[ What moved, what is new, what now calls what, and why this helps. ]</p></div>
+      </div>
+    </details>
+
+    <details>
+      <summary><span class="chev">&#9654;</span><span class="lbl">How to check it</span><span style="flex:1"></span><span class="prov" data-state="review" title="Click to cycle source">Needs review</span></summary>
+      <div class="details-body">
+        <p class="prose" style="margin-top:6px">Use commands or exact manual steps. A reviewer should not have to translate prose into checks.</p>
+        <div class="cmd fill">[ command to run focused tests ]</div>
+        <div class="cmd fill">[ command to run affected lint or type checks ]</div>
+        <div class="cmd fill">[ manual check: steps to see the new behavior in the app ]</div>
+        <p class="prose"><strong>Rollback plan:</strong> <span class="fill">[ how to back this out if it misbehaves ]</span></p>
+      </div>
+    </details>
+
+    <details>
+      <summary><span class="chev">&#9654;</span><span class="lbl">Questions / gaps</span><span style="flex:1"></span><span class="prov" data-state="review" title="Click to cycle source">Needs review</span></summary>
+      <div class="details-body prose">
+        <p>Use this for uncertainty, follow-ups, and anything the reviewer should not assume is settled.</p>
+        <ul>
+          <li class="fill">[ Assumption that could be wrong ]</li>
+          <li class="fill">[ Question for the reviewer ]</li>
+          <li class="fill">[ Known gap / follow-up deferred to a later PR ]</li>
+        </ul>
+      </div>
+    </details>
+  </section>
+
+  <footer class="sig">
+    <div class="prov-legend">
+      <span>Source badges:</span>
+      <span style="color:var(--clear)">&#9679; Author confirmed</span>
+      <span style="color:var(--medium)">&#9679; AI draft</span>
+      <span style="color:var(--crit)">&#9679; Needs review</span>
+    </div>
+    <span>PR Review Brief &middot; self-contained &middot; opens in any browser</span>
+    <span class="fill">[ generated &lt;date&gt; ]</span>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var SEV_RANK = { low:1, medium:2, high:3, critical:4 };
+  var SEV_BAND = { 0:"CLEAR", 1:"LOW", 2:"MEDIUM", 3:"HIGH", 4:"CRITICAL" };
+  var BAND_DESC = {
+    CLEAR:"No special risk flags set. Turn on any that apply.",
+    LOW:"Routine review. No high-risk areas flagged.",
+    MEDIUM:"Some areas need a closer look. Use the review guide below.",
+    HIGH:"High-risk area touched. Review carefully and confirm the rollback plan.",
+    CRITICAL:"Sensitive area touched. Check carefully before merge."
+  };
+  var flags = [].slice.call(document.querySelectorAll("#flags .flag"));
+  var banner = document.getElementById("banner");
+  var bLvl = document.getElementById("banner-lvl");
+  var bDesc = document.getElementById("banner-desc");
+  var bCount = document.getElementById("banner-count");
+  function recompute(){
+    var active = flags.filter(function(f){ return f.classList.contains("active"); });
+    var max = active.reduce(function(m,f){ return Math.max(m, SEV_RANK[f.dataset.sev]||0); }, 0);
+    var band = SEV_BAND[max];
+    banner.setAttribute("data-lvl", band);
+    bLvl.textContent = band; bDesc.textContent = BAND_DESC[band];
+    bCount.textContent = active.length ? active.length+" flag"+(active.length>1?"s":"")+" set" : "";
+  }
+  flags.forEach(function(f){ f.addEventListener("click", function(){ f.classList.toggle("active"); recompute(); }); });
+  recompute();
+
+  var PROV = [{state:"review",label:"Needs review"},{state:"ai",label:"AI draft"},{state:"human",label:"Author confirmed"}];
+  document.querySelectorAll(".prov").forEach(function(p){
+    p.addEventListener("click", function(){
+      var i = PROV.findIndex(function(x){ return x.state === p.dataset.state; });
+      var n = PROV[(i+1)%PROV.length]; p.dataset.state = n.state; p.textContent = n.label;
+    });
+  });
+
+  document.querySelectorAll(".cmd").forEach(function(block){
+    var btn = document.createElement("button");
+    btn.className = "copy"; btn.textContent = "copy";
+    btn.addEventListener("click", function(){
+      var clone = block.cloneNode(true); var b = clone.querySelector(".copy"); if(b) b.remove();
+      copy(clone.textContent.trim(), btn);
+    });
+    block.appendChild(btn);
+  });
+  function copy(text, btn){
+    function ok(){ btn.textContent="copied"; btn.classList.add("done"); setTimeout(function(){ btn.textContent="copy"; btn.classList.remove("done"); },1400); }
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(ok).catch(fb); } else { fb(); }
+    function fb(){ var ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy"); ok();}catch(e){} document.body.removeChild(ta); }
+  }
+
+  var dets = [].slice.call(document.querySelectorAll("details"));
+  document.getElementById("btn-expand").addEventListener("click", function(){ dets.forEach(function(d){ d.open=true; }); });
+  document.getElementById("btn-collapse").addEventListener("click", function(){ dets.forEach(function(d){ d.open=false; }); });
+
+  var root = document.documentElement;
+  var fillBtn = document.getElementById("btn-fill");
+  var fillCount = document.getElementById("fill-count");
+  var total = document.querySelectorAll(".fill").length;
+  fillBtn.addEventListener("click", function(){
+    var on = root.getAttribute("data-fillmode")==="on";
+    root.setAttribute("data-fillmode", on?"off":"on"); fillBtn.classList.toggle("on", !on);
+    fillCount.textContent = on ? "" : total+" fields highlighted";
+  });
+
+  var themeBtn = document.getElementById("btn-theme");
+  themeBtn.addEventListener("click", function(){
+    var dark = root.getAttribute("data-theme")==="dark";
+    root.setAttribute("data-theme", dark?"light":"dark"); themeBtn.textContent = dark?"Dark":"Light";
+  });
+
+  document.getElementById("btn-print").addEventListener("click", function(){ window.print(); });
+})();
+</script>
+</body>
+</html>
