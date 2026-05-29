@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bin/sync-readme >/dev/null 2>&1 || true",
+            "statusMessage": "Syncing README skills table"
+          }
+        ]
+      }
+    ]
+  }
+}

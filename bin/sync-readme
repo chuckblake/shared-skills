@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# Regenerate the skills quick-reference table in README.md from the
+# frontmatter of every .claude/skills/*/SKILL.md.
+#
+# The table lives between the <!-- SKILLS:START --> and <!-- SKILLS:END -->
+# markers in README.md; everything outside the markers is left untouched.
+# Idempotent: run it any time skills are added, removed, or re-described.
+#
+# Usage:
+#   bin/sync-readme           # rewrite README.md in place
+#   bin/sync-readme --check   # exit 1 if README is out of date (for CI/hooks)
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+readme="README.md"
+start="<!-- SKILLS:START -->"
+end="<!-- SKILLS:END -->"
+
+# Build the table rows by reading each SKILL.md frontmatter.
+rows=""
+for f in .claude/skills/*/SKILL.md; do
+  [ -e "$f" ] || continue
+  # Pull `name` and `description` (handles folded `>-`/`|` multi-line values)
+  # out of the YAML frontmatter, then reduce the description to its first
+  # sentence on a single line.
+  read -r name desc <<EOF
+$(awk '
+    BEGIN { fm=0; ind=0 }
+    /^---[[:space:]]*$/ { fm++; if (fm==2) exit; next }
+    fm==1 {
+      if ($0 ~ /^name:/)        { sub(/^name:[[:space:]]*/,""); gsub(/^["\x27]|["\x27]$/,""); name=$0; ind=0; next }
+      if ($0 ~ /^description:/)  {
+        line=$0; sub(/^description:[[:space:]]*/,"",line);
+        gsub(/^[>|][+-]?[[:space:]]*$/,"",line);   # drop bare fold indicators
+        if (line != "") desc=line;
+        ind=1; next
+      }
+      if ($0 ~ /^[A-Za-z_-]+:/) { ind=0; next }     # next top-level key ends description
+      if (ind==1) { s=$0; sub(/^[[:space:]]+/,"",s); desc=desc " " s }
+    }
+    END {
+      gsub(/^[[:space:]]+|[[:space:]]+$/,"",desc)
+      # first sentence: up to the first ". "
+      i=index(desc,". "); if (i>0) desc=substr(desc,1,i)
+      print name "\t" desc
+    }
+  ' "$f")
+EOF
+  [ -n "$name" ] || continue
+  rows="${rows}| \`/${name}\` | ${desc} |
+"
+done
+
+table_body="| Skill | What it does |
+|---|---|
+${rows}"
+
+# Append a marker block if the README doesn't have one yet.
+if ! grep -qF "$start" "$readme"; then
+  printf '\n## Skills\n\n%s\n%s%s\n' "$start" "$table_body" "$end" >> "$readme"
+fi
+
+# Reassemble: everything up to and including START, the fresh table, then
+# everything from END onward. No multi-line awk vars (BSD awk chokes on those).
+before="$(awk -v s="$start" '{print} $0==s{exit}' "$readme")"
+after="$(awk -v e="$end" 'f{print} $0==e{f=1}' "$readme")"
+new="${before}
+${table_body}${end}
+${after}"
+
+if [ "${1:-}" = "--check" ]; then
+  if [ "$new" != "$(cat "$readme")" ]; then
+    echo "README.md skills table is out of date — run bin/sync-readme" >&2
+    exit 1
+  fi
+  exit 0
+fi
+
+printf '%s\n' "$new" > "$readme"
+echo "Synced $readme skills table."
